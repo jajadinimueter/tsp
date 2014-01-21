@@ -1,0 +1,170 @@
+<html>
+<head>
+<title>TSP - Travelling Salesman Problem</title> 
+<script src="tsp.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+window.onload = function() {
+    var num_points = 10;
+    var pop_size = 50;
+    var canvx = 500;
+    var canvy = 500;
+    var max_generations = 5000;
+    var global_min = Number.MAX_VALUE;   
+ 
+    var ui_min = document.getElementById('curmin');    
+    var ui_iter = document.getElementById('iteration');    
+    var ui_popsize = document.getElementById('popsize');    
+    var ui_min_algo = document.getElementById('min_algo');    
+
+    var canvas1 = document.getElementById('graph1');
+    var canvas2 = document.getElementById('graph2');
+    var canvas3 = document.getElementById('graph3');
+
+    var points = generate_random_points(num_points, canvx, canvy);
+    var population = generate_initial_population(pop_size, num_points);
+    var dmap = generate_distance_map(points);    
+
+    var algorithms = [
+        {
+            name: 'best_mutate',
+            factory: best_mutate,
+            config_fn: function() {
+                return {
+                    best_of: 4,
+                    mutate: 3,
+                    mutate_count: 1
+                }},
+            line_style: {
+                width: 2,
+                color: 'blue'
+            },
+            ctx: canvas1.getContext('2d') 
+        }, {
+            name: 'best_mutate2',
+            factory: best_mutate,
+            config_fn: function() {
+                return {
+                    best_of: 4,
+                    mutate: 3,
+                    mutate_count: 1
+                }},
+            line_style: {
+                width: 2,
+                color: '#000000'
+            },
+            ctx: canvas2.getContext('2d') 
+        }, {
+            name: 'ox1_crossover',
+            factory: ox1_crossover,
+            config_fn: function() {
+                return {
+                    rate: 0.1,
+                    p_better_bonus: 100,
+                    p_out_of: 4 
+                }},
+            line_style: {
+                width: 2,
+                color: '#000000'
+            },
+            ctx: canvas3.getContext('2d') 
+        }
+    ];
+
+    var mutators = [];
+
+    // initialize algorithms
+    for (var i=0; i<algorithms.length; i++) {
+        var algo = algorithms[i];
+        mutators.push([new algo.factory(array_copy(population), 
+                                        array_copy(dmap),
+                                        array_copy(points),
+                                        algo.config_fn),
+                       algo]);
+    }
+
+    function draw_next_generation(gen) {
+        
+        for (var i=0; i<mutators.length; i++) {
+            var mutator = mutators[i];
+            var config = mutator[1];
+            var ctx = config['ctx'];
+            ctx.clearRect(0, 0, canvx, canvy);
+            var mutator = mutator[0];
+            var line_style = config['line_style'];
+            
+            var next_pop = mutator.next_generation();
+            var sums = calculate_sums(next_pop, dmap);
+            var isums = sums[0];                
+
+            while ( next_pop.length > pop_size ) {
+                // remove the weak ones
+                var mix = 0;
+                var max = 0;
+                for (var i=0; i<isums.length; i++) {
+                    var s = isums[i];
+                    if ( s > max ) {
+                        max = s;
+                        mix = i;
+                    }        
+                }
+                next_pop.pop(mix);
+            }
+
+            var sums = calculate_sums(next_pop, dmap);
+
+            var min_length = sums[1][1];
+            var min_index = sums[1][0];
+            var best = next_pop[min_index];
+
+            ui_iter.value = gen;
+            ui_popsize.value = next_pop.length; 
+
+            if ( min_length < mutator.min_length ) {
+                mutator.min_length = min_length;
+                mutator.best = best;
+            }
+
+            if ( min_length < global_min ) {
+                ui_min.value = min_length;
+                ui_min_algo.value = config['name'];
+                global_min = min_length;
+            }
+
+            // draws only the best of the population
+            var print_pop_i = Math.min(next_pop.length, 5);
+            var print_pop = next_pop.slice(0, print_pop_i);
+            draw_lines(ctx, print_pop, points, '#aaaaaa', 1);
+            if ( mutator.best ) {
+                draw_lines(ctx, [mutator.best], points, 
+                           line_style['color'], line_style['width']);
+            }
+            draw_points(ctx, points);
+        }
+        
+        if ( gen < max_generations ) {
+            setTimeout(draw_next_generation, 10, gen+1); 
+        }
+    }
+    
+    draw_next_generation(0);
+};
+</script>
+<div id="controls" style="width: 200px; float:left; border: 1px solid black;">
+    <label>Current Minimum</label><br>
+    <input type="text" id="curmin" value=""/><br>
+    <label>Current Minimum Algo</label><br>
+    <input type="text" id="min_algo" value=""/><br>
+    <label>Iteration</label><br>
+    <input type="text" id="iteration" value=""/>
+    <label>Population Size</label><br>
+    <input type="text" id="popsize" value=""/>
+</div>
+<div>
+<canvas id="graph1" width="500" height="500"></canvas>
+<canvas id="graph2" width="500" height="500"></canvas>
+<canvas id="graph3" width="500" height="500"></canvas><br/>
+</div>
+</body>
+</html>
