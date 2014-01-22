@@ -311,9 +311,112 @@ function mutate_some(pop, rate) {
 }
 
 
+function build_edge_map(p1, p2) {
+    var l = p1.length;
+    var map = [];
+    for(var i=0; i<l; i++) {    
+        map[i] = [];
+    }
+    var x = null;
+    var ps = [p1, p2];
+    var vals = null;
+    var k = null;
+    var q = null;
+    var v = null;
+    for(var i=0; i<l; i++) {
+        for(var j=0; j<ps.length; j++) {
+            p = ps[j];
+            x = p[i];
+            k = i-1;
+            q = i+1;
+            if (k<0) {
+                k = l-1;
+            }
+            if (q == l) {   
+                q = 0;
+            }
+            vals = [p[k], p[q]];
+            for(var z=0; z<vals.length; z++) {
+                v = vals[z];
+                if ( !array_contains(map[x], v) ){   
+                    map[x].push(v);
+                }
+            }
+        }
+    }
+    return map;
+}
+
+
+function get_min_cities(emap, only) {
+    var min_cities = [];
+    var min_city_ixs = [];
+    var mins = [];
+    var cur_min_count = Number.MAX_VALUE;
+    for (var i=0; i<emap.length; i++) {
+        if ( only ) {
+            if ( !array_contains(only, i) ) {
+                continue;
+            }
+        }
+        var x = emap[i];
+        if (x.length == 0) {
+            continue;
+        }
+        if (x.length < cur_min_count) {
+            min_cities = [];
+            min_city_ixs = [];
+            min_cities.push(x);
+            min_city_ixs.push(i);
+            cur_min_count = x.length;
+        } else if (x.length == cur_min_count ) {
+            min_cities.push(x);
+            min_city_ixs.push(i);
+        }
+    }
+    if (min_cities.length == 0){
+        return null;
+    }
+    var l = min_cities.length;
+    var ix = Math.floor(Math.random() * l);
+    var x = min_cities[ix];
+    return [min_city_ixs[ix], x];
+}
+
+
+function delete_references(emap, c) {
+    for (var i=0; i<emap.length; i++) {
+        var x = emap[i];
+        var j = x.indexOf(c);
+        if ( j != -1 ) {
+            x.splice(j, 1);
+        }
+    }
+}
+
+
 function cross_er(p1, p2) {
     // make the edge recombination algo
-    return [];
+    var emap = build_edge_map(p1, p2);
+    var min_cities = null;
+    var edges = null;
+    var result = [];
+    while (min_cities = get_min_cities(emap, edges)) {
+        var c1 = min_cities[0];
+        edges = min_cities[1];
+        // delete reference to c1 in edge map 
+        delete_references(emap, c1);
+        result.push(c1);
+    }
+    if ( result.length < p1.length) {
+        for(var i=0; i<p1.length; i++) {    
+            var x = result.indexOf(i);
+            if ( x == -1 ) {
+                result.push(i);
+            }
+        }
+    }
+    return [result];
 }
 
 
