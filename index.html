@@ -6,7 +6,7 @@
 <body>
 <script type="text/javascript">
 window.onload = function() {
-    var num_points = 50;
+    var num_points = 100;
     var pop_size = 200;
     var canvx = 500;
     var canvy = 500;
@@ -21,6 +21,7 @@ window.onload = function() {
     var canvas1 = document.getElementById('graph1');
     var canvas2 = document.getElementById('graph2');
     var canvas3 = document.getElementById('graph3');
+    var canvas4 = document.getElementById('graph4');
 
     var points = generate_random_points(num_points, canvx, canvy);
     var population = generate_initial_population(pop_size, num_points);
@@ -69,6 +70,20 @@ window.onload = function() {
                 color: '#000000'
             },
             ctx: canvas3.getContext('2d') 
+        }, {
+            name: 'er_crossover',
+            factory: er_crossover,
+            config_fn: function() {
+                return {
+                    rate: 0.5,
+                    p_better_bonus: 5,
+                    p_out_of: 5 
+                }},
+            line_style: {
+                width: 2,
+                color: '#000000'
+            },
+            ctx: canvas4.getContext('2d') 
         }
     ];
 
@@ -165,7 +180,8 @@ window.onload = function() {
 <div>
 <canvas id="graph1" width="500" height="500"></canvas>
 <canvas id="graph2" width="500" height="500"></canvas>
-<canvas id="graph3" width="500" height="500"></canvas><br/>
+<canvas id="graph3" width="500" height="500"></canvas>
+<canvas id="graph4" width="500" height="500"></canvas>
 </div>
 </body>
 </html>

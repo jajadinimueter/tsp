@@ -260,6 +260,110 @@ function array_max(arr) {
     return [mix, max];
 }
 
+
+function get_parents(pop, dmap, out_of, p_better_bonus) {
+    var parents = [];
+    var all_parents = [];
+    var plen = pop.length;
+    for (var i=out_of; i<plen; i+=out_of){  
+        if ( i < plen ) {
+            var pl2 = pop.slice(i-out_of,i);
+            var sums = calculate_sums(pl2, dmap);
+            var ibest = sums[1][0];
+            var rander = [];
+            for (var j=0; j<p_better_bonus; j++) {
+                rander.push(ibest);
+            }
+            // everyone else one time
+            for (var j=0; j<out_of-1; j++) {
+                rander.push(j);
+            }
+            var p = pl2[rander[
+                Math.floor(Math.random()*rander.length)]];
+            
+            parents.push(p); 
+            if (parents.length == 2) {
+                all_parents.push(parents);
+                parents = [];
+            }
+        }
+    }
+    return all_parents;
+}
+
+
+function mutate_some(pop, rate) {
+    var nplen = pop.length;
+    var mut_count=nplen * rate;
+    for(var i=0; i<mut_count; i++) {
+        var ix = Math.floor(Math.random() * nplen);
+        var ind = pop[ix];
+        var kind = Math.floor(Math.random() * 2);
+        if ( kind == 0 ) {  
+            ind = swap_mutate(ind);
+        } else if ( kind == 1 ) {
+            ind = flip_mutate(ind);
+        } else if ( kind == 2 ) {
+            ind = slide_mutate(ind);
+        }
+        pop[ix] = ind;
+    } 
+}
+
+
+function cross_er(p1, p2) {
+    // make the edge recombination algo
+    return [];
+}
+
+
+function replace_weakest(pop, dmap, new_pop) {
+    var sums = calculate_sums(pop, dmap);       
+    var idx = null;
+    for ( var i=0; i<new_pop.length; i++) { 
+        x = array_max(sums[0]);
+        idx = x[0];
+        sums[0][idx] = 0;
+        pop[idx] = new_pop[i];        
+    }
+}
+
+
+var er_crossover = function(pop, dmap, points, config_fn) {
+    this.pop = pop;
+    this.min_length = Number.MAX_VALUE;
+    this.best = null;
+    this.next_generation = function() {
+        var config = config_fn();
+        var rate = config['rate'] || 0.5;
+        var out_of = config['p_out_of'] || 4;
+        var p_better_bonus = config['p_better_bonus'] || 1;
+        this.pop = shuffle(this.pop);
+        var plen = this.pop.length;
+        var new_pop = [];
+        var all_parents = get_parents(this.pop, dmap, 
+            out_of, p_better_bonus);
+        
+        for (var i=0; i<all_parents.length; i++){  
+            parents = all_parents[i];
+            children = cross_er(parents[0], parents[1]); 
+            new_pop.push(parents[0]);
+            new_pop.push(parents[1]);
+            for(var j=0; j<children.length; j++) {
+                new_pop.push(children[j]);
+            }
+        }
+
+        // mutate some according to mutation rate
+        mutate_some(new_pop, rate);
+        replace_weakest(this.pop, dmap, new_pop); 
+
+        return this.pop;
+    }
+}
+
+
+
 var ox1_crossover = function(pop, dmap, points, config_fn) {
     this.pop = pop;
     this.min_length = Number.MAX_VALUE;
@@ -272,59 +376,22 @@ var ox1_crossover = function(pop, dmap, points, config_fn) {
         this.pop = shuffle(this.pop);
         var plen = this.pop.length;
         var new_pop = [];
-        var parents = [];
-        for (var i=out_of; i<plen; i+=out_of){  
-            if ( i < plen ) {
-                var pl2 = this.pop.slice(i-out_of,i);
-                var sums = calculate_sums(pl2, dmap);
-                var ibest = sums[1][0];
-                var rander = [];
-                for (var j=0; j<p_better_bonus; j++) {
-                    rander.push(ibest);
-                }
-                // everyone else one time
-                for (var j=0; j<out_of-1; j++) {
-                    rander.push(j);
-                }
-                var p = pl2[rander[
-                    Math.floor(Math.random()*rander.length)]];
-                
-                parents.push(p); 
-                new_pop.push(p);
-            }
-            if (parents.length == 2) {
-                children = cross_ox1(parents[0], parents[1]); 
-                for(var j=0; j<children.length; j++) {
-                    new_pop.push(children[j]);
-                }
+        var all_parents = get_parents(this.pop, dmap, 
+            out_of, p_better_bonus);
+
+        for (var i=0; i<all_parents.length; i++){  
+            parents = all_parents[i];
+            children = cross_ox1(parents[0], parents[1]); 
+            new_pop.push(parents[0]);
+            new_pop.push(parents[1]);
+            for(var j=0; j<children.length; j++) {
+                new_pop.push(children[j]);
             }
         }
 
         // mutate some according to mutation rate
-        var nplen = new_pop.length;
-        var mut_count=nplen * rate;
-        for(var i=0; i<mut_count; i++) {
-            var ix = Math.floor(Math.random() * nplen);
-            var ind = new_pop[ix];
-            var kind = Math.floor(Math.random() * 2);
-            if ( kind == 0 ) {  
-                ind = swap_mutate(ind);
-            } else if ( kind == 1 ) {
-                ind = flip_mutate(ind);
-            } else if ( kind == 2 ) {
-                ind = slide_mutate(ind);
-            }
-            new_pop[ix] = ind;
-        } 
-        
-        var sums = calculate_sums(this.pop, dmap);       
-         
-        for ( var i=0; i<new_pop.length; i++) { 
-            x = array_max(sums[0]);
-            var idx = x[0];
-            sums[0][idx] = 0;
-            this.pop[idx] = new_pop[i];        
-        }
+        mutate_some(new_pop, rate);
+        replace_weakest(this.pop, dmap, new_pop); 
 
         return this.pop;
     };
