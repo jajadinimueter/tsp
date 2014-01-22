@@ -43,6 +43,10 @@ function draw_points(ctx, points) {
     var recsize = 6;
     var rs = recsize/2;
     for (var i=0; i<points.length; i++) {
+        ctx.fillStyle = 'black';
+        if (i == 0) {
+            ctx.fillStyle = 'red';
+        }
         var point = points[i];
         ctx.fillRect(point[0]-rs,point[1]-rs,recsize,recsize);
     }
@@ -69,7 +73,8 @@ function generate_distance_map(points) {
     var dmap = [];
     for(var i=0; i<points.length; i++) {
         var p1 = points[i];
-        var dmap_entry = [];   
+        var dmap_entry = [];  
+        var k = null; 
         for(var j=0; j<points.length; j++) {
             if ( j == i ) {
                 dmap_entry.push(0);
@@ -91,11 +96,16 @@ function calculate_sums(pop, dmap) {
     // and returns the shortest as well
     var shortest = [NaN, Number.MAX_VALUE];
     var sums = [];
+    var k = null;
     for (var i=0; i<pop.length; i++){
         var sum = 0;
         var chromo = pop[i];
-        for(var j=0; j<chromo.length-1; j++) {
-            sum += dmap[chromo[j]][chromo[j+1]];
+        for(var j=0; j<chromo.length; j++) {
+            k = j+1;
+            if ( k == chromo.length ) {
+                k = 0;
+            }
+            sum += dmap[chromo[j]][chromo[k]];
         }
         sums[i] = sum;
         if ( sum < shortest[1] ) {
@@ -111,14 +121,17 @@ function draw_lines(ctx, pop, points, style, line_width) {
     for(var i=0; i<pop.length; i++) {
         ctx.beginPath();
         var chromo = pop[i];
+        var xy = null;
         for (var j=0; j<chromo.length; j++) {
             var pn = chromo[j];
-            var xy = points[pn]; 
+            xy = points[pn]; 
             if ( j > 0 ) {
                 ctx.lineTo(xy[0], xy[1]); 
             }
             ctx.moveTo(xy[0], xy[1]);
         }
+        xy = points[chromo[0]];
+        ctx.lineTo(xy[0], xy[1]);
         ctx.stroke(); 
     }
 }

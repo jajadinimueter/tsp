@@ -6,7 +6,7 @@
 <body>
 <script type="text/javascript">
 window.onload = function() {
-    var num_points = 100;
+    var num_points = 50;
     var pop_size = 200;
     var canvx = 500;
     var canvy = 500;
@@ -60,9 +60,9 @@ window.onload = function() {
             factory: ox1_crossover,
             config_fn: function() {
                 return {
-                    rate: 0.3,
+                    rate: 0.5,
                     p_better_bonus: 5,
-                    p_out_of: 3 
+                    p_out_of: 5 
                 }},
             line_style: {
                 width: 2,
