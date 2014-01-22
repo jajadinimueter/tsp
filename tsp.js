@@ -215,6 +215,10 @@ function cross_ox1(p1, p2) {
     var l = p1.length;
     var s1 = Math.floor(Math.random() * l);
     var s2 = Math.floor(Math.random() * l);
+    var s = [s1, s2];
+    s.sort();
+    s1 = s[0];
+    s2 = s[1];
     if ( s1 == s2 ) {
         // dont bother with the algo
         return [p1, p2];
@@ -230,6 +234,19 @@ function cross_ox1(p1, p2) {
     }       
 }
 
+function array_max(arr) {
+    var mix = 0;
+    var max = 0;
+    for (var i=0; i<arr.length; i++) {
+        var s = arr[i];
+        if ( s > max ) {
+            max = s;
+            mix = i;
+        }        
+    }
+    return [mix, max];
+}
+
 var ox1_crossover = function(pop, dmap, points, config_fn) {
     this.pop = pop;
     this.min_length = Number.MAX_VALUE;
@@ -237,15 +254,15 @@ var ox1_crossover = function(pop, dmap, points, config_fn) {
     this.next_generation = function() {
         var config = config_fn();
         var rate = config['rate'] || 0.5;
-        var out_of = config['p_out_of'] || 0.5;
+        var out_of = config['p_out_of'] || 4;
         var p_better_bonus = config['p_better_bonus'] || 1;
         this.pop = shuffle(this.pop);
         var plen = this.pop.length;
         var new_pop = [];
-        for (var i=0; i<plen; i++){  
-            if ( i + out_of < plen ) {
-                var p1 = this.pop[i];
-                var pl2 = this.pop.slice(i+1,i+out_of);
+        var parents = [];
+        for (var i=out_of; i<plen; i+=out_of){  
+            if ( i < plen ) {
+                var pl2 = this.pop.slice(i-out_of,i);
                 var sums = calculate_sums(pl2, dmap);
                 var ibest = sums[1][0];
                 var rander = [];
@@ -256,16 +273,14 @@ var ox1_crossover = function(pop, dmap, points, config_fn) {
                 for (var j=0; j<out_of-1; j++) {
                     rander.push(j);
                 }
-                var p2 = pl2[rander[
+                var p = pl2[rander[
                     Math.floor(Math.random()*rander.length)]];
-            
-                new_pop.push(p1);
-                // do the crossover between p1 and p2 
-                for (var j=0; j<pl2.length; j++){
-                    new_pop.push(pl2[j]);
-                }
- 
-                children = cross_ox1(p1, p2); 
+                
+                parents.push(p); 
+                new_pop.push(p);
+            }
+            if (parents.length == 2) {
+                children = cross_ox1(parents[0], parents[1]); 
                 for(var j=0; j<children.length; j++) {
                     new_pop.push(children[j]);
                 }
@@ -289,7 +304,14 @@ var ox1_crossover = function(pop, dmap, points, config_fn) {
             new_pop[ix] = ind;
         } 
         
-        this.pop = new_pop;        
+        var sums = calculate_sums(this.pop, dmap);       
+         
+        for ( var i=0; i<new_pop.length; i++) { 
+            x = array_max(sums[0]);
+            var idx = x[0];
+            sums[0][idx] = 0;
+            this.pop[idx] = new_pop[i];        
+        }
 
         return this.pop;
     };

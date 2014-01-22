@@ -6,8 +6,8 @@
 <body>
 <script type="text/javascript">
 window.onload = function() {
-    var num_points = 10;
-    var pop_size = 50;
+    var num_points = 100;
+    var pop_size = 200;
     var canvx = 500;
     var canvy = 500;
     var max_generations = 5000;
@@ -60,9 +60,9 @@ window.onload = function() {
             factory: ox1_crossover,
             config_fn: function() {
                 return {
-                    rate: 0.1,
-                    p_better_bonus: 100,
-                    p_out_of: 4 
+                    rate: 0.3,
+                    p_better_bonus: 5,
+                    p_out_of: 3 
                 }},
             line_style: {
                 width: 2,
@@ -109,6 +109,7 @@ window.onload = function() {
                         mix = i;
                     }        
                 }
+                isums.pop(mix);
                 next_pop.pop(mix);
             }
 
