@@ -6,166 +6,259 @@
 <body>
 <script type="text/javascript">
 window.onload = function() {
-    var num_points = 120;
-    var pop_size = 200;
-    var canvx = 500;
-    var canvy = 500;
-    var max_generations = 5000;
-    var global_min = Number.MAX_VALUE;   
- 
     var ui_min = document.getElementById('curmin');    
+    var ui_start = document.getElementById('start');    
+    var ui_stop = document.getElementById('stop');    
+    var ui_pause = document.getElementById('pause');    
     var ui_iter = document.getElementById('iteration');    
+    var ui_maxiter = document.getElementById('maxiter');    
     var ui_popsize = document.getElementById('popsize');    
     var ui_min_algo = document.getElementById('min_algo');    
+    var ui_numpoints = document.getElementById('numpoints');    
+    var ui_pop = document.getElementById('numpoints');    
+    
+    var ui_bm_curmin = document.getElementById('bm_curmin');    
+
+    var ui_ox1_curmin = document.getElementById('ox1_curmin');    
+    var ui_ox1_rate = document.getElementById('ox1_rate');    
+    var ui_ox1_bb = document.getElementById('ox1_bb');    
+    var ui_ox1_bo  = document.getElementById('ox1_bo');    
+
+    var ui_er_curmin = document.getElementById('er_curmin');    
+    var ui_er_rate = document.getElementById('er_rate');    
+    var ui_er_bb = document.getElementById('er_bb');    
+    var ui_er_bo  = document.getElementById('er_bo');    
+
 
     var canvas1 = document.getElementById('graph1');
     var canvas3 = document.getElementById('graph3');
     var canvas4 = document.getElementById('graph4');
 
-    var points = generate_random_points(num_points, canvx, canvy);
-    var population = generate_initial_population(pop_size, num_points);
-    var dmap = generate_distance_map(points);    
+    var pause = false;
+    var stop = false;    
+        
+    ui_pause.disabled = true;
 
-    var algorithms = [
-        {
-            name: 'best_mutate',
-            factory: best_mutate,
-            config_fn: function() {
-                return {
-                    best_of: 4,
-                    mutate: 3,
-                    mutate_count: 1
-                }},
-            line_style: {
-                width: 2,
-                color: 'blue'
-            },
-            ctx: canvas1.getContext('2d') 
-        }, {
-            name: 'ox1_crossover',
-            factory: ox1_crossover,
-            config_fn: function() {
-                return {
-                    rate: 0.8,
-                    p_better_bonus: 5,
-                    p_out_of: 5 
-                }},
-            line_style: {
-                width: 2,
-                color: '#000000'
-            },
-            ctx: canvas3.getContext('2d') 
-        }, {
-            name: 'er_crossover',
-            factory: er_crossover,
-            config_fn: function() {
-                return {
-                    rate: 0.5,
-                    p_better_bonus: 10,
-                    p_out_of: 4 
-                }},
-            line_style: {
-                width: 2,
-                color: '#000000'
-            },
-            ctx: canvas4.getContext('2d') 
-        }
-    ];
-
-    var mutators = [];
-
-    // initialize algorithms
-    for (var i=0; i<algorithms.length; i++) {
-        var algo = algorithms[i];
-        mutators.push([new algo.factory(array_copy(population), 
-                                        array_copy(dmap),
-                                        array_copy(points),
-                                        algo.config_fn),
-                       algo]);
+    window.ea_pause = function() {
+        pause = !pause;
+        return false;
     }
 
-    function draw_next_generation(gen) {
+    window.ea_stop = function() {
+        stop = true;
+        pause = false;
+        ui_start.disabled = false;
+        ui_pause.disabled = true;
+        ui_stop.disabled = true;
+        return false;
+    }
+
+    window.ea_start_new = function() {
+        stop = false;        
+        ui_start.disabled = true;
+        ui_pause.disabled = false;
+        ui_stop.disabled = false;
         
-        for (var i=0; i<mutators.length; i++) {
-            var mutator = mutators[i];
-            var config = mutator[1];
-            var ctx = config['ctx'];
-            ctx.clearRect(0, 0, canvx, canvy);
-            var mutator = mutator[0];
-            var line_style = config['line_style'];
+        var num_points = parseInt(ui_numpoints.value);
+        var pop_size = parseInt(ui_pop.value);
+        var canvx = 300;
+        var canvy = 500;
+        var max_generations = parseInt(ui_maxiter.value);
+        var global_min = Number.MAX_VALUE;   
+     
+        var points = generate_random_points(num_points, canvx, canvy);
+        var population = generate_initial_population(pop_size, num_points);
+        var dmap = generate_distance_map(points);    
+
+        var algorithms = [
+            {
+                name: 'best_mutate',
+                ui_curmin: bm_curmin, 
+                factory: best_mutate,
+                config_fn: function() {
+                    return {
+                        best_of: 4,
+                        mutate: 3,
+                        mutate_count: 1
+                    }},
+                line_style: {
+                    width: 2,
+                    color: 'blue'
+                },
+                ctx: canvas1.getContext('2d') 
+            }, {
+                name: 'ox1_crossover',
+                ui_curmin: ox1_curmin, 
+                factory: ox1_crossover,
+                config_fn: function() {
+                    return {
+                        rate: parseFloat(ui_ox1_rate.value),
+                        p_better_bonus: parseInt(ui_ox1_bb.value),
+                        p_out_of: parseInt(ui_ox1_bo.value) 
+                    }},
+                line_style: {
+                    width: 2,
+                    color: '#000000'
+                },
+                ctx: canvas3.getContext('2d') 
+            }, {
+                name: 'er_crossover',
+                ui_curmin: er_curmin, 
+                factory: er_crossover,
+                config_fn: function() {
+                    return {
+                        rate: parseFloat(ui_er_rate.value),
+                        p_better_bonus: parseInt(ui_er_bb.value),
+                        p_out_of: parseInt(ui_er_bo.value) 
+                    }},
+                line_style: {
+                    width: 2,
+                    color: '#000000'
+                },
+                ctx: canvas4.getContext('2d') 
+            }
+        ];
+
+        var mutators = [];
+
+        // initialize algorithms
+        for (var i=0; i<algorithms.length; i++) {
+            var algo = algorithms[i];
+            mutators.push([new algo.factory(array_copy(population), 
+                                            array_copy(dmap),
+                                            array_copy(points),
+                                            algo.config_fn),
+                           algo]);
+        }
+
+        function draw_next_generation(gen) {
             
-            var next_pop = mutator.next_generation();
-            var sums = calculate_sums(next_pop, dmap);
-            var isums = sums[0];                
+            for (var i=0; i<mutators.length; i++) {
+                var mutator = mutators[i];
+                var config = mutator[1];
+                var ctx = config['ctx'];
+                ctx.clearRect(0, 0, canvx, canvy);
+                var mutator = mutator[0];
+                var line_style = config['line_style'];
+                var cm = config['ui_curmin'];     
+           
+                var next_pop = mutator.next_generation();
+                var sums = calculate_sums(next_pop, dmap);
+                var isums = sums[0];                
 
-            while ( next_pop.length > pop_size ) {
-                // remove the weak ones
-                var mix = 0;
-                var max = 0;
-                for (var i=0; i<isums.length; i++) {
-                    var s = isums[i];
-                    if ( s > max ) {
-                        max = s;
-                        mix = i;
-                    }        
+                while ( next_pop.length > pop_size ) {
+                    // remove the weak ones
+                    var mix = 0;
+                    var max = 0;
+                    for (var i=0; i<isums.length; i++) {
+                        var s = isums[i];
+                        if ( s > max ) {
+                            max = s;
+                            mix = i;
+                        }        
+                    }
+                    isums.pop(mix);
+                    next_pop.pop(mix);
                 }
-                isums.pop(mix);
-                next_pop.pop(mix);
+
+                var sums = calculate_sums(next_pop, dmap);
+
+                var min_length = sums[1][1];
+                var min_index = sums[1][0];
+                var best = next_pop[min_index];
+
+                ui_iter.value = gen;
+
+                if ( min_length < mutator.min_length ) {
+                    mutator.min_length = min_length;
+                    mutator.best = best;
+                    cm.value = min_length;
+                }
+
+                if ( min_length < global_min ) {
+                    ui_min.value = min_length;
+                    ui_min_algo.value = config['name'];
+                    global_min = min_length;
+                }
+
+                // draws only the best of the population
+                var print_pop_i = Math.min(next_pop.length, 5);
+                var print_pop = next_pop.slice(0, print_pop_i);
+                draw_lines(ctx, print_pop, points, '#aaaaaa', 1);
+                if ( mutator.best ) {
+                    draw_lines(ctx, [mutator.best], points, 
+                               line_style['color'], line_style['width']);
+                }
+                draw_points(ctx, points);
             }
-
-            var sums = calculate_sums(next_pop, dmap);
-
-            var min_length = sums[1][1];
-            var min_index = sums[1][0];
-            var best = next_pop[min_index];
-
-            ui_iter.value = gen;
-            ui_popsize.value = next_pop.length; 
-
-            if ( min_length < mutator.min_length ) {
-                mutator.min_length = min_length;
-                mutator.best = best;
+                   
+            function do_next() {
+                if ( gen < max_generations && !pause ) {
+                    setTimeout(draw_next_generation, 10, gen+1); 
+                } else if (pause) {
+                    setTimeout(do_next, 10); 
+                }
             }
-
-            if ( min_length < global_min ) {
-                ui_min.value = min_length;
-                ui_min_algo.value = config['name'];
-                global_min = min_length;
+            
+            if (!stop) { 
+                do_next(); 
             }
-
-            // draws only the best of the population
-            var print_pop_i = Math.min(next_pop.length, 5);
-            var print_pop = next_pop.slice(0, print_pop_i);
-            draw_lines(ctx, print_pop, points, '#aaaaaa', 1);
-            if ( mutator.best ) {
-                draw_lines(ctx, [mutator.best], points, 
-                           line_style['color'], line_style['width']);
-            }
-            draw_points(ctx, points);
         }
         
-        if ( gen < max_generations ) {
-            setTimeout(draw_next_generation, 10, gen+1); 
-        }
-    }
-    
-    draw_next_generation(0);
+        draw_next_generation(0);
+        return false;
+    } // end start new
 };
 </script>
-<div id="controls" style="width: 200px; float:left; border: 1px solid black;">
+<div id="controls" style="width: 210px; float:left; height: 10000px">
     <label>Current Minimum</label><br>
-    <input type="text" id="curmin" value=""/><br>
+    <input type="text" id="curmin" disabled="disabled" value=""/><br>
     <label>Current Minimum Algo</label><br>
-    <input type="text" id="min_algo" value=""/><br>
+    <input type="text" id="min_algo" disabled="disabled" value=""/><br>
     <label>Iteration</label><br>
-    <input type="text" id="iteration" value=""/>
+    <input type="text" id="iteration" disabled="disabled" value=""/><br>
     <label>Population Size</label><br>
-    <input type="text" id="popsize" value=""/>
+    <input type="text" id="popsize" value="200"/><br>
+    <label>Max Iterations</label><br>
+    <input type="text" id="maxiter" value="5000"/><br>
+    <label>Num Points</label><br>
+    <input type="text" id="numpoints" value="120"/><br>
+    <label>Controls</label><br>
+    <input type="button" id="start" value="On" onclick="return ea_start_new();">
+    <input type="button" id="pause" value="||" onclick="return ea_pause();">
+    <input type="button" id="stop" value="Off" onclick="return ea_stop();"><br>
+    <p>
+    <b>BEST_MUTATE</b><br>
+    <label>Current Minimum</label><br>
+    <input type="text" id="bm_curmin" disabled="disabled" value=""/><br>
+    </p> 
+    <p>
+    <b>OX1_CROSSOVER</b><br>
+    <label>Current Minimum</label><br>
+    <input type="text" id="ox1_curmin" disabled="disabled" value=""/><br>
+    <label>Mutation Rate</label><br>
+    <input type="text" id="ox1_rate" value="0.3"/><br>
+    <label>Better Bonus</label><br>
+    <input type="text" id="ox1_bb" value="10"/><br>
+    <label>Best Out Of</label><br>
+    <input type="text" id="ox1_bo" value="4"/><br>
+    </p> 
+    <p>
+    <b>ER_CROSSOVER</b><br>
+    <label>Current Minimum</label><br>
+    <input type="text" id="er_curmin" disabled="disabled" value=""/><br>
+    <label>Mutation Rate</label><br>
+    <input type="text" id="er_rate" value="0.3"/><br>
+    <label>Better Bonus</label><br>
+    <input type="text" id="er_bb" value="10"/><br>
+    <label>Best Out Of</label><br>
+    <input type="text" id="er_bo" value="4"/><br>
+    </p> 
 </div>
 <div>
-<canvas id="graph1" width="500" height="500"></canvas>
-<canvas id="graph3" width="500" height="500"></canvas>
-<canvas id="graph4" width="500" height="500"></canvas>
+<canvas id="graph1" width="300" height="500"></canvas>
+<canvas id="graph3" width="300" height="500"></canvas>
+<canvas id="graph4" width="300" height="500"></canvas>
 </div>
 </body>
 </html>
