@@ -2,6 +2,11 @@
 <head>
 <title>TSP - Travelling Salesman Problem</title> 
 <script src="tsp.js"></script>
+<style type="text/css">
+body, input {
+font-family: monospace; 
+}
+</style>
 </head>
 <body>
 <script type="text/javascript">
@@ -172,11 +177,11 @@ window.onload = function() {
                 if ( min_length < mutator.min_length ) {
                     mutator.min_length = min_length;
                     mutator.best = best;
-                    cm.value = min_length;
+                    cm.value =  min_length.toFixed(2);
                 }
 
                 if ( min_length < global_min ) {
-                    ui_min.value = min_length;
+                    ui_min.value =  min_length.toFixed(2);
                     ui_min_algo.value = config['name'];
                     global_min = min_length;
                 }
@@ -210,7 +215,7 @@ window.onload = function() {
     } // end start new
 };
 </script>
-<div id="controls" style="width: 210px; float:left; height: 10000px">
+<div id="controls" style="width: 200; float:left; height: 10000px; argin-right: 10px;">
     <label>Current Minimum</label><br>
     <input type="text" id="curmin" disabled="disabled" value=""/><br>
     <label>Current Minimum Algo</label><br>
