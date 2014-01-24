@@ -88,7 +88,7 @@ window.onload = function() {
                     }},
                 line_style: {
                     width: 2,
-                    color: 'blue'
+                    color: '#000000'
                 },
                 ctx: canvas1.getContext('2d') 
             }, {
@@ -186,13 +186,19 @@ window.onload = function() {
                     global_min = min_length;
                 }
 
+                if (ui_min_algo.value == config['name']){
+                    line_color = 'blue';
+                } else {
+                    line_color = 'black';
+                }
+
                 // draws only the best of the population
                 var print_pop_i = Math.min(next_pop.length, 5);
                 var print_pop = next_pop.slice(0, print_pop_i);
                 draw_lines(ctx, print_pop, points, '#aaaaaa', 1);
                 if ( mutator.best ) {
                     draw_lines(ctx, [mutator.best], points, 
-                               line_style['color'], line_style['width']);
+                               line_color, line_style['width']);
                 }
                 draw_points(ctx, points);
             }
